@@ -16,6 +16,7 @@ public class ParkourController : MonoBehaviour {
     private float angleDone;
     private float fallAccerlation = 9.8f;
 
+    private bool resetFlag;
     private float rotateTimer;
     private bool hasRotated;    //true if no gravity transition in progress
     private bool hasJumped; //true is jumping
@@ -47,11 +48,26 @@ public class ParkourController : MonoBehaviour {
         rotateTimer = 0;
         hasRotated = true;
         hasJumped = true;
+        resetFlag = false;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if(resetFlag)
+        {
+            resetFlag = false;
+            transform.position = Vector3.zero;
+            curGravity = new Vector3(0, -1, 0);
+            transform.rotation = Quaternion.identity;
+            curGravity = new Vector3(0, -1, 0);
+            lastRotationAxis = new Vector3(0, 0, 0);
+            lastRotationAngle = 0;
+
+            rotateTimer = 0;
+            hasRotated = true;
+            hasJumped = true;
+        }
         if(hasJumped)
         {
             if (!checkGround())
@@ -75,6 +91,10 @@ public class ParkourController : MonoBehaviour {
             for (int i = 0; i < hits.Length; i++)  //need to refractor
             {
                 RaycastHit hit = hits[i];
+                if(hit.collider.tag == "Finish")
+                {
+                    continue;
+                }
                 Renderer rend = hit.transform.GetComponent<Renderer>();
 
                 Vector3 newGravity = getGravity(hit.transform.localEulerAngles);
@@ -258,6 +278,10 @@ public class ParkourController : MonoBehaviour {
         for (int i = 0; i < hits.Length; i++)  //need to refractor
         {
             RaycastHit hit = hits[i];
+            if (hit.collider.tag == "Finish")
+            {
+                continue;
+            }
             Renderer rend = hit.transform.GetComponent<Renderer>();
             float fallDistance = (transform.position - hit.point).magnitude;
             res = (2 * fallDistance) / (rotateDuration * rotateDuration);
@@ -393,7 +417,20 @@ public class ParkourController : MonoBehaviour {
     /// <returns>true if on the ground, else false</returns>
     private bool checkGround()
     {
-        return Physics.Raycast(transform.position, curGravity, distToGround + 0.1f);
+        RaycastHit[] hits = Physics.RaycastAll(transform.position, curGravity, 100.0F);
+        for (int i = 0; i < hits.Length; i++)  //need to refractor
+        {
+            RaycastHit hit = hits[i];
+            float fallDistance = (transform.position - hit.point).magnitude;
+            if (hit.collider.tag == "Finish" && fallDistance <= distToGround + 0.1f)
+            {
+                resetFlag = true;
+                return true;
+            }
+            return Physics.Raycast(transform.position, curGravity, distToGround + 0.1f);
+        }
+        return false;
+        //return Physics.Raycast(transform.position, curGravity, distToGround + 0.1f);
     }
 
 
