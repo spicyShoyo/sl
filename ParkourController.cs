@@ -97,11 +97,14 @@ public class ParkourController : MonoBehaviour {
                 }
                 Renderer rend = hit.transform.GetComponent<Renderer>();
 
-                Vector3 newGravity = getGravity(hit.transform.localEulerAngles);
+                Vector3 newGravity = - 1 * hit.normal;
+                newGravity.x = Mathf.Round(newGravity.x);
+                newGravity.y = Mathf.Round(newGravity.y);
+                newGravity.z = Mathf.Round(newGravity.z);
+                //Vector3 newGravity = getGravity(hit.transform.localEulerAngles);
 
                 if (newGravity != curGravity)
                 {
-
                     setupFall(newGravity);
                     setupRotation(curGravity, newGravity);
 
@@ -311,6 +314,7 @@ public class ParkourController : MonoBehaviour {
 
         Vector3 forward = eye.transform.forward;
         Vector3 right = eye.transform.right;
+
         if (curGravity.x != 0)
         {
             forward.x = 0;
