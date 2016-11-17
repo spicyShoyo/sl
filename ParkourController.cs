@@ -2,22 +2,19 @@
 using System.Collections;
 using UnityStandardAssets.CrossPlatformInput;
 
-public class ParkourController : MonoBehaviour {
+public class ParkourController : MonoBehaviour
+{
     private GameObject eye;
     private Rigidbody body;
 
     private Vector3 curGravity;
 
-    private Vector3 lastRotationAxis;
-    private float lastRotationAngle;
-
     private Vector3 rotateAxis;
     private float rotateAngle;
     private float angleDone;
-    private float fallAccerlation = 9.8f;
+    private float rotateTimer;
 
     private bool resetFlag;
-    private float rotateTimer;
     private bool hasRotated;    //true if no gravity transition in progress
     private bool hasJumped; //true is jumping
 
@@ -26,13 +23,13 @@ public class ParkourController : MonoBehaviour {
     private const float distToWall = 2.1f; //magic number
     private const float GravityConstant = 9.8f * 1.5f;
     private float gravitySpeed = 0.0f;
-    private const float AccerlationConstant = 6.0f;
+    private const float AccelerationConstant = 6.0f;
 
     private const float jumpDuration = 1.0f;
     private float jumpTimer;
 
     private Vector3 jumpUpDir;
- 
+
     private const float jumpUpSpeedInit = 10;
 
     // Use this for initialization
@@ -42,8 +39,6 @@ public class ParkourController : MonoBehaviour {
         eye = transform.FindChild("Camera").gameObject;
 
         curGravity = new Vector3(0, -1, 0);
-        lastRotationAxis = new Vector3(0, 0, 0);
-        lastRotationAngle = 0;
 
         rotateTimer = 0;
         hasRotated = true;
@@ -54,21 +49,19 @@ public class ParkourController : MonoBehaviour {
     // Update is called once per frame
     void Update()
     {
-        if(resetFlag)
+        if (resetFlag)
         {
             resetFlag = false;
             transform.position = Vector3.zero;
             curGravity = new Vector3(0, -1, 0);
             transform.rotation = Quaternion.identity;
             curGravity = new Vector3(0, -1, 0);
-            lastRotationAxis = new Vector3(0, 0, 0);
-            lastRotationAngle = 0;
 
             rotateTimer = 0;
             hasRotated = true;
             hasJumped = true;
         }
-        if(hasJumped)
+        if (hasJumped)
         {
             if (!checkGround())
             {
@@ -91,13 +84,13 @@ public class ParkourController : MonoBehaviour {
             for (int i = 0; i < hits.Length; i++)  //need to refractor
             {
                 RaycastHit hit = hits[i];
-                if(hit.collider.tag == "Finish")
+                if (hit.collider.tag == "Finish")
                 {
                     continue;
                 }
                 Renderer rend = hit.transform.GetComponent<Renderer>();
 
-                Vector3 newGravity = - 1 * hit.normal;
+                Vector3 newGravity = -1 * hit.normal;
                 newGravity.x = Mathf.Round(newGravity.x);
                 newGravity.y = Mathf.Round(newGravity.y);
                 newGravity.z = Mathf.Round(newGravity.z);
@@ -105,7 +98,6 @@ public class ParkourController : MonoBehaviour {
 
                 if (newGravity != curGravity)
                 {
-                    setupFall(newGravity);
                     setupRotation(curGravity, newGravity);
 
                     curGravity = newGravity;
@@ -146,16 +138,18 @@ public class ParkourController : MonoBehaviour {
 
     private void jumpCamera()
     {
-        if(jumpTimer >= jumpDuration)
+        if (jumpTimer >= jumpDuration)
         {
             hasJumped = true;
-        }else
+        }
+        else
         {
             body.velocity = Vector3.zero;
             if (!checkCollision((jumpUpDir).normalized) && gravitySpeed < 0)
             {
                 body.velocity += gravitySpeed * curGravity;
-            }else if(!checkGround() && gravitySpeed >= 0)
+            }
+            else if (!checkGround() && gravitySpeed >= 0)
             {
                 body.velocity += gravitySpeed * curGravity;
             }
@@ -295,16 +289,6 @@ public class ParkourController : MonoBehaviour {
 
 
     /// <summary>
-    /// setup the fall accleration when rotation for smooth
-    /// </summary>
-    /// <param name="newGravity">the new gravity</param>
-    private void setupFall(Vector3 newGravity)
-    {
-        float fallDistance = getFallDistance(newGravity);
-        fallAccerlation = (2 * fallDistance) / (rotateDuration * rotateDuration);
-    }
-
-    /// <summary>
     /// Update translation based on user input
     /// </summary>
     private void updateMovement()
@@ -315,39 +299,28 @@ public class ParkourController : MonoBehaviour {
         Vector3 forward = eye.transform.forward;
         Vector3 right = eye.transform.right;
 
-        if (curGravity.x != 0)
-        {
-            forward.x = 0;
-            right.x = 0;
-        }
-        else if (curGravity.y != 0)
-        {
-            forward.y = 0;
-            right.y = 0;
-        }
-        else
-        {
-            forward.z = 0;
-            right.z = 0;
-        }
+        forward = Vector3.ProjectOnPlane(forward, -curGravity).normalized;
+        right = Vector3.ProjectOnPlane(right, -curGravity).normalized;
+
+        Vector3 verticalDir = (forward * vertical).normalized;
+        Vector3 horizontalDir = (right * horizontal).normalized;
 
 
-        if (!checkCollision((forward * vertical).normalized))
+        if (!checkCollision(verticalDir))
         {
-            Vector3 verticalVelocity = forward * vertical;
-            
-            if(Input.GetKey("joystick button 8"))
+
+            if (Input.GetKey("joystick button 8"))
             {
-                body.velocity += verticalVelocity * AccerlationConstant;
-            }else
+                body.velocity += verticalDir * AccelerationConstant;
+            }
+            else
             {
-                body.velocity += verticalVelocity * AccerlationConstant * 2;
+                body.velocity += verticalDir * AccelerationConstant * 2;
             }
         }
-        if (!checkCollision((right * horizontal).normalized))
+        if (!checkCollision(horizontalDir))
         {
-            Vector3 horizontalVelocity = right * horizontal;
-            body.velocity += horizontalVelocity * AccerlationConstant;
+            body.velocity += horizontalDir * AccelerationConstant;
         }
 
         gameObject.transform.position += body.velocity * 0.01f;
@@ -362,11 +335,6 @@ public class ParkourController : MonoBehaviour {
     /// </summary>
     private void rotationFall()
     {
-        //if (!checkGround())
-        //{
-        //    body.velocity += fallAccerlation * curGravity;
-        //}
-
         if (!checkGround())
         {
             body.velocity += GravityConstant * curGravity;
@@ -392,7 +360,7 @@ public class ParkourController : MonoBehaviour {
         if (!checkCollision((forward * vertical).normalized))
         {
             Vector3 verticalVelocity = forward * vertical;
-            body.velocity += verticalVelocity * AccerlationConstant;
+            body.velocity += verticalVelocity * AccelerationConstant;
         }
 
         gameObject.transform.position += body.velocity * 0.01f;
