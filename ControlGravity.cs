@@ -11,6 +11,7 @@ public class ControlGravity : MonoBehaviour {
 
     // Stores the current gravity
     private Vector3 curGravity;
+    private Vector3 nextGravity;
     // Stores previous rotation values
     private Vector3 lastRotationAxis;
     private float lastRotationAngle;
@@ -57,12 +58,14 @@ public class ControlGravity : MonoBehaviour {
     {
         
         float speed = 3.0f;
-        float xRot = speed * Input.GetAxis("RightJoystickX");
-        float yRot = speed * Input.GetAxis("RightJoystickY");
-
-        transform.Rotate(xRot, yRot, 0);
-        //transform.localEulerAngles = new Vector3(-yRot, transform.localEulerAngles.y, 0);
+        float xRot = speed * Input.GetAxis("RightJoystickY");
+        float yRot = speed * Input.GetAxis("RightJoystickX");
         
+        //transform.Rotate(xRot, yRot, 0);
+        transform.RotateAround(transform.position, curGravity, -xRot);
+        transform.RotateAround(transform.position, playerCamera.transform.right, yRot);
+        //transform.localEulerAngles = new Vector3(-yRot, transform.localEulerAngles.y, 0);
+
         if (Input.GetKeyDown("q") || isLeftBumperPressed())
         {
             transform.RotateAround(transform.position, curGravity, 2);
@@ -86,6 +89,9 @@ public class ControlGravity : MonoBehaviour {
         if (!isPlayerOnTheGround())
         {
             playerBody.velocity += 9.8f * curGravity;
+        } else
+        {
+            curGravity = nextGravity;
         }
 
         // Get Movement values from keyboard & Joystick
@@ -93,24 +99,8 @@ public class ControlGravity : MonoBehaviour {
         float moveY = CrossPlatformInputManager.GetAxis("Vertical");
 
         // Get Directional Movement Vectors
-        // TODO: This has to change to support any rotated surface
-        Vector3 forward = playerCamera.transform.forward;
-        Vector3 right = playerCamera.transform.right;
-        if (curGravity.x != 0)
-        {
-            forward.x = 0;
-            right.x = 0;
-        }
-        else if (curGravity.y != 0)
-        {
-            forward.y = 0;
-            right.y = 0;
-        }
-        else
-        {
-            forward.z = 0;
-            right.z = 0;
-        }
+        Vector3 forward = Vector3.ProjectOnPlane(transform.forward, -curGravity).normalized;
+        Vector3 right = Vector3.ProjectOnPlane(transform.right, -curGravity).normalized;
 
         // Get Player Movement and Check for Collision
         Vector3 horizontalVelocity = right * moveX;
@@ -118,12 +108,12 @@ public class ControlGravity : MonoBehaviour {
 
         if (!isPlayerColliding((horizontalVelocity).normalized))
         {
-            //playerBody.velocity += horizontalVelocity * 5;
+            playerBody.velocity += horizontalVelocity * 5;
         }
 
         if (!isPlayerColliding((verticalVelocity).normalized))
         {
-            //playerBody.velocity += verticalVelocity * 5;
+            playerBody.velocity += verticalVelocity * 5;
         }
 
         // Update Player Position with updated velocity
@@ -158,7 +148,9 @@ public class ControlGravity : MonoBehaviour {
     /// </summary>
     void updateGravityDirection()
     {
-        curGravity = getNewGravityDirection();
+        RaycastHit firstHitObject = getFirstHitObject();
+        curGravity = playerCamera.transform.forward;
+        nextGravity = -1 * firstHitObject.normal;
         
         // TODO: Add in rotating to reset user camera
     }
@@ -168,18 +160,12 @@ public class ControlGravity : MonoBehaviour {
     /// The walls represent the 6 primary axis.
     /// </summary>
     /// <returns> Normalized Vector3 of the new gravity direction </returns>
-    Vector3 getNewGravityDirection()
+    RaycastHit getFirstHitObject()
     {
         RaycastHit[] hits;
         hits = Physics.RaycastAll(playerCamera.transform.position, transform.forward, 100.0F);
 
-        GameObject wall = hits[0].transform.gameObject;
-        while (wall.tag != "Wall")
-        {
-            wall = wall.transform.parent.gameObject;
-        }
-
-        return Vector3.Normalize(wall.transform.position);
+        return hits[0];
     }
 
     /*********************************************************************************************************************/
