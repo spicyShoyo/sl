@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityStandardAssets.CrossPlatformInput;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class FallingController : MonoBehaviour
 {
@@ -39,6 +41,14 @@ public class FallingController : MonoBehaviour
     private int difficulty = 2; //normal difficulty
     private Vector3 fallSpeed = new Vector3(0, -0.35f, 0); //constant fall speed through tunnel
 
+    //added by zliu
+    public Text menuText;
+    public Text scoreText;
+    private int score;
+    private float scoreTimer;
+    private int levelCounter = 0;
+    private Vector3 initPos;
+    private Quaternion initRot;
     // Use this for initialization
     void Start()
     {
@@ -49,27 +59,50 @@ public class FallingController : MonoBehaviour
         eye = transform.FindChild("Camera").gameObject;
 
         curGravity = new Vector3(0, 0, -1);
-
+        score = 0;
         rotateTimer = 0;
         hasRotated = true;
         hasJumped = true;
         resetFlag = false;
+
+        initPos = transform.position;
+        initRot = transform.rotation;
     }
 
     // Update is called once per frame
     void Update()
     {
         // Update whether have game is over or not
-        if (!gameIsOver) { updateGameOverConditions(); }
-        else { return; }
+        if (!gameIsOver)
+        {
+            scoreText.text = "Score: " + score.ToString();
+            updateGameOverConditions();
+        }
+        else
+        {
+            gameOverMenu();
+            if (Input.GetKeyDown("joystick button 0"))
+            {
+                SceneManager.LoadScene("Falling", LoadSceneMode.Single);
+            }
+        }
+
+        if (!gameIsOver)
+        {
+            scoreTimer += Time.deltaTime;
+            if (scoreTimer > 0.3)
+            {
+                scoreTimer = 0;
+                score += 10;
+            }
+        }
 
         if (resetFlag)
         {
             resetFlag = false;
-            transform.position = Vector3.zero;
-            curGravity = new Vector3(0, -1, 0);
-            transform.rotation = Quaternion.identity;
-            curGravity = new Vector3(0, -1, 0);
+            transform.position = initPos;
+            curGravity = new Vector3(0, 0, -1);
+            transform.rotation = initRot;
 
             rotateTimer = 0;
             hasRotated = true;
@@ -280,7 +313,7 @@ public class FallingController : MonoBehaviour
             gameObject.transform.position += body.velocity * 0.01f;
 
             // Constant Falling
-            
+
             gameObject.transform.position += fallSpeed;
         }
     }
@@ -370,30 +403,25 @@ public class FallingController : MonoBehaviour
         // Initialize variables
         Vector3 globalDown = new Vector3(0, -1f, 0);
         RaycastHit[] hits;
-        var canvas = GameObject.Find("Game Over Canvas");
-        Transform lostTextTr = canvas.transform.Find("Lost text");
-        Transform wonTextTr = canvas.transform.Find("Won text");
-        UnityEngine.UI.Text lostText = lostTextTr.GetComponent<UnityEngine.UI.Text>();
-        UnityEngine.UI.Text wonText = wonTextTr.GetComponent<UnityEngine.UI.Text>();
 
         // Determine if hit anything
         hits = Physics.RaycastAll(transform.position, globalDown, distToWall);
-        if(hits.Length == 0) { return; }
+        if (hits.Length == 0) { return; }
 
         // Game is over - Update whether won or lost
         RaycastHit hit = hits[0];
         if (hit.collider.tag == "Finish")
         {
-            haveWon = true;
-            wonText.color = new Color(0.25f, 0.25f, 0.25f, 1);
+            nextLevel();
         }
         else if (hit.collider.tag == "Obstacle")
         {
-            haveLost = true;
-            lostText.color = new Color(0.25f, 0.25f, 0.25f, 1);
+            //nextLevel();
+            resetFlag = true;
+            gameIsOver = true;
         }
-        gameIsOver = true;
     }
+
 
     /// <summary>
     /// Sets the difficulty for the game
@@ -436,5 +464,43 @@ public class FallingController : MonoBehaviour
             AccelerationConstant = 10.0f;
             MovementScaler = 2.0f;
         }
+    }
+
+    private void nextLevel()
+    {
+        if (difficulty < 4)
+        {
+            difficulty += 1;
+            levelCounter += 1;
+        }
+        resetFlag = true;
+        if (levelCounter == 5)
+        {
+            var canvas = GameObject.Find("Game Over Canvas");
+            Transform wonTextTr = canvas.transform.Find("Won text");
+            UnityEngine.UI.Text wonText = wonTextTr.GetComponent<UnityEngine.UI.Text>();
+            haveWon = true;
+            gameIsOver = true;
+            wonText.color = new Color(0.25f, 0.25f, 0.25f, 1);
+        }
+        return;
+    }
+
+
+    private void gameOverMenu()
+    {
+        string resultText = "";
+        if (haveWon)
+        {
+            resultText = "You won!\n";
+        }
+        else
+        {
+            resultText = "You lost!\n";
+        }
+        string markText = "Score: " + score.ToString() + "\n";
+        string optionText = "Press A:\nrestart\nPress B: mainmenu\n";
+        menuText.text = resultText + markText + optionText;
+        scoreText.text = "";
     }
 }
