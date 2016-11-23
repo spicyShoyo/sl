@@ -85,6 +85,10 @@ public class FallingController : MonoBehaviour
             {
                 SceneManager.LoadScene("Falling", LoadSceneMode.Single);
             }
+            if (Input.GetKeyDown("joystick button 1"))
+            {
+                SceneManager.LoadScene("Mainmenu", LoadSceneMode.Single);
+            }
         }
 
         if (!gameIsOver)
@@ -123,7 +127,7 @@ public class FallingController : MonoBehaviour
 
 
         Debug.DrawLine(eye.transform.position, eye.transform.position + eye.transform.forward * 10, Color.green);
-        if ((Input.GetKeyDown("joystick button 1") || Input.GetKeyDown("p")) && hasRotated)
+        if ((Input.GetKeyDown("joystick button 1") || Input.GetKeyDown("p")) && hasRotated && !gameIsOver)
         {
             hasJumped = true;
             RaycastHit[] hits;
