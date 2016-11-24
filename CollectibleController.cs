@@ -7,12 +7,13 @@ public class CollectibleController : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         player = GameObject.Find("Player");
+        print(player);
 	}
 	
 	// Update is called once per frame
 	void Update () {
         cube.transform.Rotate(new Vector3(15, 30, 45) * Time.deltaTime);
-        if(Vector3.Distance(player.transform.position, gameObject.transform.position) < 3)
+        if(Vector3.Distance(player.transform.position, gameObject.transform.position) < 5)
         {
             collected();
         }
@@ -29,6 +30,7 @@ public class CollectibleController : MonoBehaviour {
 
     private void collected()
     {
+        GameObject.Find("GameController").GetComponent<CityGameController>().addScore();
         Destroy(gameObject);
     }
 }
