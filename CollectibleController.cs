@@ -30,7 +30,16 @@ public class CollectibleController : MonoBehaviour {
 
     private void collected()
     {
-        GameObject.Find("GameController").GetComponent<CityGameController>().addScore();
+        CityGameController cityGameControllerObj = GameObject.Find("GameController").GetComponent<CityGameController>();
+        if(cityGameControllerObj)
+        {
+            cityGameControllerObj.addScore();
+        }
+        PlatformGameController platformGameControllerObj = GameObject.Find("GameController").GetComponent<PlatformGameController>();
+        if(platformGameControllerObj)
+        {
+            platformGameControllerObj.addScore();
+        }
         Destroy(gameObject);
     }
 }
