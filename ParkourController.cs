@@ -32,6 +32,12 @@ public class ParkourController : MonoBehaviour
 
     private const float jumpUpSpeedInit = 10;
 
+
+    //save respawn state
+    Vector3 savedPosition;
+    Vector3 savedGravity;
+    Quaternion saveRotation;
+
     // Use this for initialization
     void Start()
     {
@@ -44,6 +50,10 @@ public class ParkourController : MonoBehaviour
         hasRotated = true;
         hasJumped = true;
         resetFlag = false;
+
+        savedPosition = Vector3.zero;
+        savedGravity = new Vector3(0, -1, 0);
+        saveRotation = Quaternion.identity;
     }
 
     // Update is called once per frame
@@ -52,10 +62,10 @@ public class ParkourController : MonoBehaviour
         if (resetFlag)
         {
             resetFlag = false;
-            transform.position = Vector3.zero;
-            curGravity = new Vector3(0, -1, 0);
-            transform.rotation = Quaternion.identity;
-            curGravity = new Vector3(0, -1, 0);
+            transform.position = savedPosition;
+            curGravity = savedGravity;
+            transform.rotation = saveRotation;
+            curGravity = savedGravity;
 
             rotateTimer = 0;
             hasRotated = true;
@@ -372,6 +382,14 @@ public class ParkourController : MonoBehaviour
     /// </summary>
     private void updateViewDir()
     {
+        float speed = 3.0f;
+        float xRot = speed * Input.GetAxis("RightJoystickY");
+        float yRot = speed * Input.GetAxis("RightJoystickX");
+
+        //transform.Rotate(xRot, yRot, 0);
+        gameObject.transform.RotateAround(transform.position, curGravity, xRot);
+        gameObject.transform.RotateAround(transform.position, curGravity, -yRot);
+
         if (Input.GetKeyDown("q") || Input.GetKeyDown("joystick button 4"))
         {
             gameObject.transform.RotateAround(transform.position, curGravity, 45);
@@ -414,5 +432,12 @@ public class ParkourController : MonoBehaviour
     private bool checkCollision(Vector3 dir)
     {
         return Physics.Raycast(transform.position, dir, distToWall);
+    }
+    
+    public void saveState()
+    {
+        savedPosition = transform.position;
+        savedGravity = curGravity;
+        saveRotation = transform.rotation;
     }
 }

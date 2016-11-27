@@ -71,7 +71,7 @@ public class PlatformSpinAnchor : MonoBehaviour {
         else
         {
             rotating = false;
-            cubeObj.tag = "Untagged";
+            cubeObj.tag = "Finish";
             rotateTimer = 0;
             if (rotateAngle - angleDone != 0)
             {

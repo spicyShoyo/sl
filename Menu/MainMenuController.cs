@@ -19,6 +19,10 @@ public class MainMenuController : MonoBehaviour
         {
             SceneManager.LoadScene("Falling", LoadSceneMode.Single);
         }
+        if (Input.GetKeyDown("joystick button 1"))
+        {
+            SceneManager.LoadScene("Platform", LoadSceneMode.Single);
+        }
         if (Input.GetKeyDown("joystick button 2"))
         {
             SceneManager.LoadScene("City", LoadSceneMode.Single);
